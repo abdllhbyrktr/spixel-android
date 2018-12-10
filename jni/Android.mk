@@ -41,8 +41,6 @@ LOCAL_EXPORT_C_INCLUDES := $(LIBPNG_PLUSPLUS_INCL)
 # S-Pixel library
 include $(CLEAR_VARS)
 
-APP_MODULES := libspixel opencv_shared
-
 LOCAL_C_INCLUDES   := $(OPENCV_INCL) $(LIBPNG_INCL) $(LIBPNG_PLUSPLUS_INCL)
 LOCAL_CPP_FEATURES := rtti exceptions
 
