@@ -28,7 +28,7 @@
 #include <cmath>
 #include <iomanip>
 
-#define M_LOG2E 1.44269504088896340736 // log2(e)
+//#define M_LOG2E 1.44269504088896340736 // log2(e)
 
 inline long double log2(const long double x){
     return log(x) * M_LOG2E;

@@ -1,3 +1,20 @@
+dist/ARMv7/**
+dist/ARM64/**
+dist/x86/**
+dist/x64/**
+dist/libs/armeabi-v7a/**
+dist/libs/arm64-v8a/**
+dist/libs/x86/**
+dist/libs/x86_64/**
+!dist/.gitkeep
+!dist/ARMv7/libspixel.so
+!dist/ARM64/libspixel.so
+!dist/x86/libspixel.so
+!dist/x64/libspixel.so
+!dist/libs/armeabi-v7a/libspixel.so
+!dist/libs/arm64-v8a/libspixel.so
+!dist/libs/x86/libspixel.so
+!dist/libs/x86_64/libspixel.so
 libs/libPNG-1.5.27/obj
 libs/opencv/**
 !libs/opencv/extract opencv-android-sdk.txt
