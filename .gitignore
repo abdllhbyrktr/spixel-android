@@ -19,3 +19,4 @@ libs/libPNG-1.5.27/obj
 libs/opencv/**
 !libs/opencv/extract opencv-android-sdk.txt
 obj/
+.vscode

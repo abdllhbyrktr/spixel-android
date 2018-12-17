@@ -47,18 +47,35 @@ LOCAL_CPP_FEATURES := rtti exceptions
 LOCAL_CPP_FLAGS    := -std=c++11 -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function
 LOCAL_CPP_FLAGS    += -Wl,--exclude-libs,ALL
 
+ifeq ($(TARGET_ARCH_ABI),x86_64)
+  LOCAL_CPP_FLAGS += -msse4.2
+endif
+
 LOCAL_LDLIBS           := -llog -landroid -latomic
 LOCAL_STATIC_LIBRARIES := libpng_static
 LOCAL_SHARED_LIBRARIES := opencv_shared
 
 LOCAL_MODULE    := libspixel
-LOCAL_SRC_FILES :=\
-  stdafx.cpp \
-  structures.cpp \
-  functions.cpp \
-  sallocator.cpp \
-  segengine.cpp \
-  spixel.cpp \
-  utils.cpp \
+
+ifeq ($(TARGET_ARCH_ABI),x86_64)
+  LOCAL_SRC_FILES :=\
+    contrib/SGMStereo.cpp \
+    stdafx.cpp \
+    structures.cpp \
+    functions.cpp \
+    sallocator.cpp \
+    segengine.cpp \
+    utils.cpp \
+    spixel.cpp
+else
+  LOCAL_SRC_FILES :=\
+    stdafx.cpp \
+    structures.cpp \
+    functions.cpp \
+    sallocator.cpp \
+    segengine.cpp \
+    utils.cpp \
+    spixel.cpp
+endif
 
 include $(BUILD_SHARED_LIBRARY)

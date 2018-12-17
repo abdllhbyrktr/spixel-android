@@ -28,11 +28,11 @@
 #include <cmath>
 #include <iomanip>
 
-//#define M_LOG2E 1.44269504088896340736 // log2(e)
-
+#if defined(__ANDROID__)
 inline long double log2(const long double x){
     return log(x) * M_LOG2E;
 }
+#endif
 
 #define PRINT_LEVEL_PARAM_DOUBLE(field) \
     cout << "*" << #field << ": " << setprecision(4) << field << endl;

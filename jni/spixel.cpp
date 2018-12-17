@@ -37,9 +37,12 @@
 #include "utils.h"
 #include <fstream>
 #include <cstdlib>
-//#include "contrib/SGMStereo.h"
+
+#if defined(__x86_64__)
+#include "contrib/SGMStereo.h"
+#else
 #include <png.hpp>
-#include "contrib/tinydir.h"
+#endif
 
 using namespace cv;
 using namespace std;
@@ -68,34 +71,36 @@ Mat ConvertFloatToOCV(int width, int height, const float* data)
     return result;
 }
 
-// double SGMPreprocessing(const Mat& leftImage, const Mat& rightImage, Mat& dispImage)
-// {
-//     png::image<png::rgb_pixel> leftImageSGM, rightImageSGM;
+#if defined(__x86_64__)
+double SGMPreprocessing(const Mat& leftImage, const Mat& rightImage, Mat& dispImage)
+{
+    png::image<png::rgb_pixel> leftImageSGM, rightImageSGM;
 
-//     ConvertOCVToPNG(leftImage, leftImageSGM);
-//     ConvertOCVToPNG(rightImage, rightImageSGM);
+    ConvertOCVToPNG(leftImage, leftImageSGM);
+    ConvertOCVToPNG(rightImage, rightImageSGM);
 
-//     size_t width = leftImageSGM.get_width();
-//     size_t height = leftImageSGM.get_height();
+    size_t width = leftImageSGM.get_width();
+    size_t height = leftImageSGM.get_height();
 
-//     if (width != rightImageSGM.get_width() || height != rightImageSGM.get_height()) {
-//         dispImage = Mat1w();
-//         return 0.0;
-//     }
+    if (width != rightImageSGM.get_width() || height != rightImageSGM.get_height()) {
+        dispImage = Mat1w();
+        return 0.0;
+    }
 
-//     float* dispImageFloat = (float*)malloc(width*height*sizeof(float));
+    float* dispImageFloat = (float*)malloc(width*height*sizeof(float));
 
-//     SGMStereo sgm;
-//     Timer t;
+    SGMStereo sgm;
+    Timer t;
 
-//     sgm.compute(leftImageSGM, rightImageSGM, dispImageFloat);
-//     t.Stop();
-//     dispImage = ConvertFloatToOCV(width, height, dispImageFloat);
+    sgm.compute(leftImageSGM, rightImageSGM, dispImageFloat);
+    t.Stop();
+    dispImage = ConvertFloatToOCV(width, height, dispImageFloat);
 
-//     free(dispImageFloat);
+    free(dispImageFloat);
     
-//     return t.GetTimeInSec();
-// }
+    return t.GetTimeInSec();
+}
+#endif
 
 void ProcessFilesBatch(SPSegmentationParameters& params, const vector<string>& files, const string& fileDir)
 {
@@ -190,92 +195,94 @@ void ProcessFilesStereoBatch(SPSegmentationParameters& params, const vector<stri
     }
 }
 
-// void ProcessFilesStereoBatchSGM(SPSegmentationParameters& params, const vector<string>& files, const string& leftFileDir,
-//     const string& rightFileDir, bool rightIsName)
-// {
-//     MkDir(leftFileDir + "out");
-//     MkDir(leftFileDir + "seg");
-//     MkDir(leftFileDir + "disp");
+#if defined(__x86_64__)
+void ProcessFilesStereoBatchSGM(SPSegmentationParameters& params, const vector<string>& files, const string& leftFileDir,
+    const string& rightFileDir, bool rightIsName)
+{
+    MkDir(leftFileDir + "out");
+    MkDir(leftFileDir + "seg");
+    MkDir(leftFileDir + "disp");
 
-//     int nProcessed = 0;
-//     double totalTime = 0.0;
+    int nProcessed = 0;
+    double totalTime = 0.0;
 
-//     for (const string& f : files) {
-//         string leftFileName = leftFileDir + f;
-//         string rightFileName = rightIsName ? rightFileDir : rightFileDir + f;
-//         Mat leftImage = imread(leftFileName, CV_LOAD_IMAGE_COLOR);
-//         Mat rightImage = imread(rightFileName, CV_LOAD_IMAGE_COLOR);
+    for (const string& f : files) {
+        string leftFileName = leftFileDir + f;
+        string rightFileName = rightIsName ? rightFileDir : rightFileDir + f;
+        Mat leftImage = imread(leftFileName, CV_LOAD_IMAGE_COLOR);
+        Mat rightImage = imread(rightFileName, CV_LOAD_IMAGE_COLOR);
 
-//         if (leftImage.empty()) {
-//             cout << "Failed reading left image '" << leftImage << "'" << endl;
-//             continue;
-//         }
-//         if (rightImage.empty()) {
-//             cout << "Failed reading right image '" << rightImage << "'" << endl;
-//             continue;
-//         }
-//         cout << "Processing: " << leftFileName << "/" << rightFileName << endl;
+        if (leftImage.empty()) {
+            cout << "Failed reading left image '" << leftImage << "'" << endl;
+            continue;
+        }
+        if (rightImage.empty()) {
+            cout << "Failed reading right image '" << rightImage << "'" << endl;
+            continue;
+        }
+        cout << "Processing: " << leftFileName << "/" << rightFileName << endl;
 
-//         Mat dispImage;
-//         double sgmTime;
+        Mat dispImage;
+        double sgmTime;
         
-//         sgmTime = SGMPreprocessing(leftImage, rightImage, dispImage);
-//         totalTime += sgmTime;
+        sgmTime = SGMPreprocessing(leftImage, rightImage, dispImage);
+        totalTime += sgmTime;
 
-//         if (dispImage.empty()) {
-//             cout << "Failed creating SGM image for '" << leftImage << "'/'" << rightImage << "' pair" << endl;
-//             continue;
-//         }
+        if (dispImage.empty()) {
+            cout << "Failed creating SGM image for '" << leftImage << "'/'" << rightImage << "' pair" << endl;
+            continue;
+        }
 
-//         if (params.timingOutput) {
-//             cout << "SGM processing time: " << sgmTime << " sec." << endl;
-//         }
+        if (params.timingOutput) {
+            cout << "SGM processing time: " << sgmTime << " sec." << endl;
+        }
 
-//         SPSegmentationEngine engine(params, leftImage, dispImage);
+        SPSegmentationEngine engine(params, leftImage, dispImage);
 
-//         engine.ProcessImageStereo();
-//         engine.PrintDebugInfoStereo();
-//         engine.PrintPerformanceInfo();
-//         totalTime += engine.ProcessingTime();
+        engine.ProcessImageStereo();
+        engine.PrintDebugInfoStereo();
+        engine.PrintPerformanceInfo();
+        totalTime += engine.ProcessingTime();
 
-//         string outImage = ChangeExtension(leftFileDir + "out/" + f, "_sp.png");
-//         string outImageSeg = ChangeExtension(leftFileDir + "seg/" + f, ".png");
-//         string outImageDisp = ChangeExtension(leftFileDir + "disp/" + f, ".png");
+        string outImage = ChangeExtension(leftFileDir + "out/" + f, "_sp.png");
+        string outImageSeg = ChangeExtension(leftFileDir + "seg/" + f, ".png");
+        string outImageDisp = ChangeExtension(leftFileDir + "disp/" + f, ".png");
 
-//         imwrite(outImage, engine.GetSegmentedImage());
-//         imwrite(outImageSeg, engine.GetSegmentation());
-//         imwrite(outImageDisp, engine.GetDisparity());
+        imwrite(outImage, engine.GetSegmentedImage());
+        imwrite(outImageSeg, engine.GetSegmentation());
+        imwrite(outImageDisp, engine.GetDisparity());
 
-//         nProcessed++;
-//     }
+        nProcessed++;
+    }
 
-//     if (nProcessed > 1 && params.timingOutput) {
-//         cout << "Processed " << nProcessed << " files in " << totalTime << " sec. ";
-//         cout << "Average per image " << (totalTime / nProcessed) << " sec." << endl;
-//     }
-// }
+    if (nProcessed > 1 && params.timingOutput) {
+        cout << "Processed " << nProcessed << " files in " << totalTime << " sec. ";
+        cout << "Average per image " << (totalTime / nProcessed) << " sec." << endl;
+    }
+}
 
-// void ProcessFilesStereoBatchSGM(SPSegmentationParameters& params, string leftDir, string rightDir,
-//     const string& filePattern)
-// {
-//     vector<string> files;
+void ProcessFilesStereoBatchSGM(SPSegmentationParameters& params, string leftDir, string rightDir,
+    const string& filePattern)
+{
+    vector<string> files;
 
-//     FindFiles(leftDir, filePattern, files, false);
-//     EndDir(leftDir);
-//     EndDir(rightDir);
-//     ProcessFilesStereoBatchSGM(params, files, leftDir, rightDir, false);
-// }
+    FindFiles(leftDir, filePattern, files, false);
+    EndDir(leftDir);
+    EndDir(rightDir);
+    ProcessFilesStereoBatchSGM(params, files, leftDir, rightDir, false);
+}
 
-// void ProcessFileStereoSGM(SPSegmentationParameters& params, string leftFile, string rightFile,
-//     const string& filePattern)
-// {
-//     vector<string> files;
-//     string leftDir = FilePath(leftFile);
-//     string leftName = FileName(leftFile);
+void ProcessFileStereoSGM(SPSegmentationParameters& params, string leftFile, string rightFile,
+    const string& filePattern)
+{
+    vector<string> files;
+    string leftDir = FilePath(leftFile);
+    string leftName = FileName(leftFile);
 
-//     files.push_back(leftName);
-//     ProcessFilesStereoBatchSGM(params, files, leftDir, rightFile, true);
-// }
+    files.push_back(leftName);
+    ProcessFilesStereoBatchSGM(params, files, leftDir, rightFile, true);
+}
+#endif
 
 void ProcessFilesBatch(SPSegmentationParameters& params, const string& dirName, const string& pattern)
 {
@@ -329,12 +336,16 @@ void ProcessFiles(const string& paramFile, const string& name1, const string& na
 
     if (params.stereo) {
         if (params.batchProcessing) {
-            // if (params.computeSGM) ProcessFilesStereoBatchSGM(params, name1, name2, name3);
-            // else 
+#if defined(__x86_64__)
+            if (params.computeSGM) ProcessFilesStereoBatchSGM(params, name1, name2, name3);
+            else 
+#endif
             ProcessFilesStereoBatch(params, name1, name2, name3);
         } else { // !batchProcessing
-            // if (params.computeSGM) ProcessFileStereoSGM(params, name1, name2, name3);
-            // else 
+#if defined(__x86_64__)
+            if (params.computeSGM) ProcessFileStereoSGM(params, name1, name2, name3);
+            else 
+#endif
             ProcessFileStereo(params, name1, name2);
         }
     } else {    // !stereo
@@ -343,7 +354,7 @@ void ProcessFiles(const string& paramFile, const string& name1, const string& na
     }
 }
 
-#ifdef WIN32
+#if defined(_WIN32)
 int main(int argc, char* argv[])
 {
     if (argc == 3) {
@@ -370,7 +381,7 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-#else
+#elif defined(__ANDROID__)
 
 #include <android/log.h>
 #include <jni.h>
